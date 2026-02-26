@@ -1,21 +1,22 @@
 let cardsData = [];
-
-fetch("bingo_cards.json")
-  .then(r => r.json())
-  .then(data => {
-    cardsData = data;
-    render();
-  });
-
 let selectedNumbers = [];
 let cardCount = parseInt(localStorage.getItem("cardCount") || "1");
 let pickedCards = JSON.parse(localStorage.getItem("pickedCards") || "[]");
 
 const cardCountSelect = document.getElementById("cardCount");
 const cardPickerInput = document.getElementById("cardPicker");
+const playBtn = document.getElementById("playBtn");
 
 cardCountSelect.value = cardCount;
 cardPickerInput.value = pickedCards.join(",");
+
+// Load cards FIRST
+fetch("bingo_cards.json")
+  .then(r => r.json())
+  .then(data => {
+    cardsData = data;
+    render(); // initial render
+  });
 
 cardCountSelect.onchange = e => {
   cardCount = parseInt(e.target.value);
@@ -23,7 +24,7 @@ cardCountSelect.onchange = e => {
   render();
 };
 
-document.getElementById("playBtn").onclick = () => {
+playBtn.onclick = () => {
   pickedCards = cardPickerInput.value
     .split(",")
     .map(n => parseInt(n.trim()))
@@ -44,13 +45,14 @@ function toggle(num) {
 }
 
 function render() {
+  if (!cardsData.length) return; // wait until cards load
+
   const container = document.getElementById("cards");
   container.innerHTML = "";
 
-  // Layout
   container.style.display = "grid";
   if (cardCount <= 2) {
-    container.style.gridTemplateColumns = repeat(${cardCount}, 1fr);
+    container.style.gridTemplateColumns = `repeat(${cardCount}, 1fr)`;
   } else {
     container.style.gridTemplateColumns = "repeat(2, 1fr)";
   }
