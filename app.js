@@ -1,100 +1,83 @@
 let cardsData = [];
 let selectedNumbers = [];
-let cardCount = parseInt(localStorage.getItem("cardCount") || "1");
-let pickedCards = JSON.parse(localStorage.getItem("pickedCards") || "[]");
+let cardCount = parseInt(localStorage.getItem("cardCount")||"1");
+let slotCards = Array(4).fill(null);
 
 const cardCountSelect = document.getElementById("cardCount");
-const cardPickerInput = document.getElementById("cardPicker");
-const playBtn = document.getElementById("playBtn");
-
 cardCountSelect.value = cardCount;
-cardPickerInput.value = pickedCards.join(",");
 
-// Load cards FIRST
-fetch("bingo_cards.json")
-  .then(r => r.json())
-  .then(data => {
-    cardsData = data;
-    render(); // initial render
-  });
+fetch("bingo_cards.json").then(r=>r.json()).then(data=>{
+  cardsData = data;
+  render();
+});
 
-cardCountSelect.onchange = e => {
+cardCountSelect.onchange = e=>{
   cardCount = parseInt(e.target.value);
-  localStorage.setItem("cardCount", cardCount);
+  localStorage.setItem("cardCount",cardCount);
   render();
 };
 
-playBtn.onclick = () => {
-  pickedCards = cardPickerInput.value
-    .split(",")
-    .map(n => parseInt(n.trim()))
-    .filter(n => n >= 1 && n <= cardsData.length);
-
-  localStorage.setItem("pickedCards", JSON.stringify(pickedCards));
-  render();
-};
-
-function toggle(num) {
-  if (num === null) return;
-  if (selectedNumbers.includes(num)) {
-    selectedNumbers = selectedNumbers.filter(n => n !== num);
+function toggle(num){
+  if(!num) return;
+  if(selectedNumbers.includes(num)){
+    selectedNumbers = selectedNumbers.filter(n=>n!==num);
   } else {
     selectedNumbers.push(num);
   }
   render();
 }
 
-function render() {
-  if (!cardsData.length) return; // wait until cards load
-
+function render(){
   const container = document.getElementById("cards");
-  container.innerHTML = "";
+  container.innerHTML="";
+  container.style.display="grid";
+  container.style.gridTemplateColumns = cardCount<=2?`repeat(${cardCount},1fr)`:"repeat(2,1fr)";
 
-  container.style.display = "grid";
-  if (cardCount <= 2) {
-    container.style.gridTemplateColumns = `repeat(${cardCount}, 1fr)`;
-  } else {
-    container.style.gridTemplateColumns = "repeat(2, 1fr)";
-  }
+  for(let i=0;i<cardCount;i++){
+    const slot=document.createElement("div");
+    slot.className="cardSlot";
 
-  let cardsToShow = [];
+    const row=document.createElement("div");
+    row.style.display="flex";
+    row.style.gap="6px";
 
-  if (pickedCards.length > 0) {
-    cardsToShow = pickedCards.slice(0, cardCount).map(i => cardsData[i - 1]);
-  } else {
-    cardsToShow = cardsData.slice(0, cardCount);
-  }
+    const input=document.createElement("input");
+    input.type="number";
+    input.placeholder="Card #";
 
-  cardsToShow.forEach(cardObj => {
-    if (!cardObj) return;
-    const card = cardObj.numbers.flat();
+    const btn=document.createElement("button");
+    btn.textContent="▶";
+    btn.onclick=()=>{
+      const n=parseInt(input.value);
+      if(n>=1 && n<=cardsData.length){
+        slotCards[i]=cardsData[n-1];
+        render();
+      }
+    };
 
-    const div = document.createElement("div");
-    div.className = "card";
+    row.appendChild(btn);
+    row.appendChild(input);
 
-    const grid = document.createElement("div");
-    grid.className = "grid";
+    const grid=document.createElement("div");
+    grid.className="grid";
 
-    card.forEach((num, i) => {
-      const cell = document.createElement("div");
-      cell.className = "cell";
-
-      if (i === 12) {
-        cell.textContent = "FREE";
-        cell.classList.add("free");
+    const card = slotCards[i]?.numbers?.flat() || Array(25).fill("");
+    card.forEach((num,idx)=>{
+      const cell=document.createElement("div");
+      cell.className="cell";
+      if(idx===12){ 
+        cell.textContent="FREE"; 
+        cell.classList.add("free"); 
       } else {
-        cell.textContent = num;
+        cell.textContent=num||""; 
       }
-
-      if (selectedNumbers.includes(num)) {
-        cell.classList.add("selected");
-      }
-
-      cell.onclick = () => toggle(num);
+      if(selectedNumbers.includes(num)) cell.classList.add("selected");
+      cell.onclick=()=>toggle(num);
       grid.appendChild(cell);
     });
 
-    div.appendChild(grid);
-    container.appendChild(div);
-  });
+    slot.appendChild(row);
+    slot.appendChild(grid);
+    container.appendChild(slot);
+  }
 }
