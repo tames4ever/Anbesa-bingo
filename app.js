@@ -23,11 +23,12 @@ cardCountSelect.onchange = e => {
   render();
 };
 
-cardPickerInput.oninput = e => {
-  pickedCards = e.target.value
+document.getElementById("playBtn").onclick = () => {
+  pickedCards = cardPickerInput.value
     .split(",")
     .map(n => parseInt(n.trim()))
     .filter(n => n >= 1 && n <= cardsData.length);
+
   localStorage.setItem("pickedCards", JSON.stringify(pickedCards));
   render();
 };
